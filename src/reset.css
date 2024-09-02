@@ -1,0 +1,116 @@
+/* Box Model */
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+/* Typography */
+html {
+	font-family: sans-serif;
+	font-size: 16px;
+	line-height: 1.5;
+}
+
+body {
+	font-family: inherit;
+	font-size: 1em;
+	line-height: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-weight: bold;
+	margin-bottom: 0.5em;
+}
+
+p {
+	margin-bottom: 1em;
+}
+
+/* Links */
+a {
+	text-decoration: none;
+	color: #337ab7;
+}
+
+a:hover {
+	color: #23527c;
+}
+
+/* Images */
+img {
+	max-width: 100%;
+	height: auto;
+	border: 0;
+}
+
+/* Lists */
+ul,
+ol {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+li {
+	margin-bottom: 0.5em;
+}
+
+/* Tables */
+table {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+th,
+td {
+	border: 1px solid #ddd;
+	padding: 0.5em;
+	text-align: left;
+}
+
+th {
+	background-color: #f0f0f0;
+}
+
+/* Forms */
+input,
+textarea,
+select {
+	width: 100%;
+	padding: 0.5em;
+	margin-bottom: 1em;
+	border: 1px solid #ccc;
+}
+
+button {
+	padding: 0.5em 1em;
+	background-color: #337ab7;
+	color: #fff;
+	border: none;
+	border-radius: 0.25em;
+	cursor: pointer;
+}
+
+button:hover {
+	background-color: #23527c;
+}
+
+/* Miscellaneous */
+hr {
+	border: 0;
+	height: 1px;
+	background-color: #ddd;
+	margin: 1em 0;
+}
+
+.clearfix::after {
+	content: "";
+	clear: both;
+	display: table;
+}
