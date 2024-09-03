@@ -16,12 +16,21 @@
 				<p id="message-text">{{ message || '&nbsp;' }}</p>
 			</div>
 			<div id="stats">
-				<p id="stats-text" title="Correct / Total">
-					<span class="stat-label">Overall: </span><span class="correct">{{ store.stats.correct }}</span> / <span class="total">{{ store.stats.total }}</span> <sup v-if="store.stats.total" class="percent" :style="{ color: getPercentColor }">({{ percent }}%)</sup>
-				</p>
-				<p id="kana-stats" v-if="store.selectedKana.kana">
-					<span class="stat-label">{{ store.selectedKana.kana }}: </span><span class="correct">{{ store.stats[store.selectedKana.kana]?.correct || 0 }}</span> / <span class="total">{{ store.stats[store.selectedKana.kana]?.seen || 0 }}</span> <sup v-if="store.stats[store.selectedKana.kana]?.seen" class="percent" :style="{ color: getKanaPercentColor }">({{ (store.stats[store.selectedKana.kana].correct / store.stats[store.selectedKana.kana].seen * 100).toFixed(2) }}%)</sup>
-				</p>
+				<table title="Correct / Total">
+					<tbody>
+						<StatRow
+							label="Overall"
+							:correct="store.stats.correct"
+							:seen="store.stats.total" />
+						<StatRow
+							v-if="store.selectedKana.kana"
+							id="kana-stats"
+							:label="store.selectedKana.kana"
+							:correct="store.getCurrentKanaStats()?.correct"
+							:seen="store.getCurrentKanaStats()?.seen"
+							:weight="store.getCurrentKanaStats()?.weight" />
+					</tbody>
+				</table>
 			</div>
 		</div>
 		<div id="options">
@@ -41,6 +50,7 @@
 
 <script setup>
 import KanaTable from './components/KanaTable.vue';
+import StatRow from './components/StatRow.vue';
 import { onMounted, ref, computed, watch } from 'vue';
 import { useStore } from './stores/store.js';
 
@@ -65,7 +75,7 @@ async function kanaInput() {
 		if (message.value === '') {
 			store.stats.total++;
 			store.stats.correct++;
-			const kanaStats = store.stats[store.selectedKana.kana];
+			const kanaStats = store.getCurrentKanaStats();
 			if (kanaStats?.correct) {
 				kanaStats.correct++;
 			} else if (kanaStats) {
@@ -74,7 +84,7 @@ async function kanaInput() {
 				store.stats[store.selectedKana.kana] = { correct: 1 };
 			}
 		}
-		store.selectRandomKana(!incorrect);
+		store.selectWeightedKana(!incorrect);
 		store.startTime = Date.now();
 		kanaInputText.value = '';
 		incorrect = false;
@@ -89,7 +99,7 @@ async function kanaInput() {
 		if (message.value) return;
 		store.stats.total++;
 		incorrect = true;
-		const kanaStats = store.stats[store.selectedKana.kana];
+		const kanaStats = store.getCurrentKanaStats();
 		if (kanaStats?.seen) {
 			kanaStats.seen++;
 		} else if (kanaStats) {
@@ -124,60 +134,8 @@ function focusInput() {
 	kanaInputElem.value.focus();
 }
 
-const percent = computed(() => ((store.stats.correct / store.stats.total) * 100).toFixed(2));
-
-function interpolateColor(color1, color2, factor) {
-	const result = color1.slice();
-	for (let i = 0; i < 3; i++) {
-		result[i] = Math.round(color1[i] + factor * (color2[i] - color1[i]));
-	}
-	return result;
-}
-
-function getColor(percentVal) {
-	const colors = [
-		{ threshold: 0, color: [255, 0, 0] }, // red
-		{ threshold: 50, color: [165, 42, 42] }, // brown
-		{ threshold: 60, color: [255, 165, 0] }, // orange
-		{ threshold: 70, color: [255, 255, 0] }, // yellow
-		{ threshold: 80, color: [255, 192, 203] }, // pink
-		{ threshold: 90, color: [0, 255, 255] }, // cyan
-		{ threshold: 100, color: [0, 255, 0] }, // green
-	];
-
-	let lowerColor, upperColor;
-	for (let i = 0; i < colors.length - 1; i++) {
-		if (percentVal >= colors[i].threshold && percentVal <= colors[i + 1].threshold) {
-			lowerColor = colors[i];
-			upperColor = colors[i + 1];
-			break;
-		}
-	}
-
-	if (!lowerColor) {
-		// If the percent is above 100%, return the last color
-		return `rgb(${colors[colors.length - 1].color.join(', ')})`;
-	}
-
-	const range = upperColor.threshold - lowerColor.threshold;
-	const factor = (percentVal - lowerColor.threshold) / range;
-	const interpolatedColor = interpolateColor(lowerColor.color, upperColor.color, factor);
-
-	return `rgb(${interpolatedColor.join(', ')})`;
-}
-
-const getPercentColor = computed(() => {
-	const percentVal = (store.stats.correct / store.stats.total) * 100;
-	return getColor(percentVal);
-});
-
-const getKanaPercentColor = computed(() => {
-	const percentVal = (store.stats[store.selectedKana.kana].correct / store.stats[store.selectedKana.kana].seen) * 100;
-	return getColor(percentVal);
-})
-
 onMounted(() => {
-	store.selectRandomKana();
+	store.selectWeightedKana();
 	focusInput();
 });
 </script>
@@ -196,7 +154,7 @@ onMounted(() => {
 	padding: 1em;
 	border-top: 1px dashed #ccc;
 	background-color: rgba(0, 0, 0, 0.1);
-	box-shadow: 1px 2px 2px 1px rgba(0, 0, 0, 0.12), 1px 2px 2px 1px rgba(0, 0, 0, 0.24);
+	box-shadow: var(--box-shadow);
 }
 
 #kana-text {
@@ -238,11 +196,6 @@ onMounted(() => {
 	text-align: center;
 }
 
-#stats-text,
-#kana-stats {
-	font-size: 0.8em;
-}
-
 .percent {
 	font-size: 0.85em;
 }
@@ -255,5 +208,15 @@ onMounted(() => {
 	position: absolute;
 	top: 0;
 	right: 0;
+}
+
+#stats table {
+	border: none;
+	width: fit-content;
+	font-size: 0.8em;
+}
+
+:deep(#kana-stats) .stat-label {
+	font-size: 1.2em;
 }
 </style>

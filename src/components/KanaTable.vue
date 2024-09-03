@@ -111,7 +111,7 @@ onMounted(() => {
 }
 
 table {
-	box-shadow: 1px 2px 2px 1px rgba(0, 0, 0, 0.12), 1px 2px 2px 1px rgba(0, 0, 0, 0.24);
+	box-shadow: var(--box-shadow);
 }
 
 table,
