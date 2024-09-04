@@ -31,11 +31,12 @@ h6 {
 /* Links */
 a {
 	text-decoration: none;
-	color: #337ab7;
+	cursor: pointer;
+	color: var(--primary-color);
 }
 
 a:hover {
-	color: #23527c;
+	color: var(--primary-color--light);
 }
 
 /* Images */
@@ -85,7 +86,7 @@ select {
 
 button {
 	padding: 0.5em 1em;
-	background-color: #337ab7;
+	background-color: var(--primary-color--dark);
 	color: #fff;
 	border: none;
 	border-radius: 0.25em;
@@ -93,7 +94,7 @@ button {
 }
 
 button:hover {
-	background-color: #23527c;
+	background-color: var(--primary-color);
 }
 
 /* Miscellaneous */

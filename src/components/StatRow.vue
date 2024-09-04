@@ -3,8 +3,25 @@
 		<th>
 			<span class="stat-label">{{ label }}</span>
 		</th>
-		<td>
-			<span class="correct">{{ (correct || 0).toLocaleString() }}</span> / <span class="total">{{ (seen || 0).toLocaleString() }}</span> <span :class="(weight) ? 'script' : ''"><sup v-if="seen" class="percent" :style="{ color: getPercentColor }">({{ percent.toFixed(2) }}%)</sup><sub v-if="weight" class="weight">({{ weight.toFixed(2) }})</sub></span>
+		<td :class="(weight) ? 'min-width' : ''">
+			<span title="Correct / Total">
+				<span class="correct">{{ correct.toLocaleString() }}</span> / <span class="total">{{ seen.toLocaleString() }}</span>
+			</span>
+			<span :class="(weight) ? 'script' : ''">
+				<sup v-if="seen" title="Percent Correct" class="percent" :style="{ color: getPercentColor(percent) }"> ({{ percent.toFixed(2) }}%)</sup>
+				<sub v-if="weight" title="Weight (chance to appear)" class="weight">({{ weight.toFixed(2) }})</sub>
+			</span>
+		</td>
+		<td v-if="seen ||previousSeen" :class="(weight) ? 'min-width' : ''">
+			<span title="Correct / Total">
+				<span class="correct">{{ totalCorrect.toLocaleString() }}</span> / <span class="total">{{ totalSeen.toLocaleString() }}</span>
+			</span>
+			<span>
+				<sup v-if="seen || previousSeen" title="Percent Correct" class="percent" :style="{ color: getPercentColor(totalPercent) }"> ({{ totalPercent.toFixed(2) }}%)</sup>
+			</span>
+		</td>
+		<td v-if="avgTime">
+			<span title="Average Time">{{ avgTime.toFixed(2) }}s</span>
 		</td>
 	</tr>
 </template>
@@ -31,10 +48,28 @@ const props = defineProps({
 		type: Number,
 		required: false,
 		default: 0
+	},
+	previousCorrect: {
+		type: Number,
+		required: false,
+		default: 0
+	},
+	previousSeen: {
+		type: Number,
+		required: false,
+		default: 0
+	},
+	avgTime: {
+		type: Number,
+		required: false,
+		default: 0
 	}
 });
 
-const percent = computed(() => (props.correct / props.seen * 100));
+const percent = computed(() => (props.correct / props.seen) * 100);
+const totalCorrect = computed(() => props.correct + props.previousCorrect);
+const totalSeen = computed(() => props.seen + props.previousSeen);
+const totalPercent = computed(() => (totalCorrect.value / totalSeen.value) * 100);
 
 function interpolateColor(color1, color2, factor) {
 	const result = color1.slice();
@@ -76,8 +111,8 @@ function getColor(percentVal) {
 	return `rgb(${interpolatedColor.join(', ')})`;
 }
 
-const getPercentColor = computed(() => {
-	return getColor(percent.value);
+const getPercentColor = computed(() => (val) => {
+	return getColor(val);
 });
 </script>
 
@@ -108,5 +143,9 @@ const getPercentColor = computed(() => {
 
 .script sub {
 	top: 0.5em;
+}
+
+.min-width {
+	min-width: 85px;
 }
 </style>

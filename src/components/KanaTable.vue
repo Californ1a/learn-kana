@@ -126,6 +126,7 @@ td {
 h3 {
 	display: flex;
 	justify-content: space-between;
+	align-items: flex-end;
 }
 
 .romaji {
@@ -142,8 +143,8 @@ td {
 	text-align: center;
 }
 
-.checkall a {
-	cursor: pointer;
+.checkall {
+	font-size: 0.8em;
 }
 
 input:disabled {
