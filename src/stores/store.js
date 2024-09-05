@@ -90,15 +90,14 @@ export const useStore = defineStore('store', () => {
 		return maxWeight / Math.exp(base * i);
 	}
 
-
-	function selectWeightedElement(arr, minWeight = 1, maxWeight = 100) {
+	function generateWeights(arr, stepFunction = logStep, minWeight = 1, maxWeight = 100) {
 		const len = arr.length;
 
 		// Create a weight array
 		const weights = [];
 		for (let i = 0; i < len; i++) {
 			// Calculate weight step (difference between weights for adjacent elements)
-			const step = exponentialStep(i, maxWeight, minWeight, len);
+			const step = stepFunction(i, maxWeight, minWeight, len);
 			weights.push(step);
 
 			// Add the weight to the kana itself
@@ -113,6 +112,12 @@ export const useStore = defineStore('store', () => {
 				stats.value.kanas[arr[i].kana].weight = weights[i];
 			}
 		}
+
+		return weights;
+	}
+
+	function selectWeightedElement(arr, stepFunction, minWeight, maxWeight) {
+		const weights = generateWeights(arr, stepFunction, minWeight, maxWeight);
 
 		// console.log('weighted arr', arr);
 
@@ -130,7 +135,7 @@ export const useStore = defineStore('store', () => {
 		return arr[len - 1]; // Fallback (in case of rounding errors)
 	}
 
-	function selectWeightedKana(incrementSeen = true) {
+	function selectWeightedKana(incrementSeen = true, stepFunction) {
 		if (enabledKanas.value.length === 0) {
 			getEnabledKanas();
 		}
@@ -145,7 +150,7 @@ export const useStore = defineStore('store', () => {
 			tempList.push(...enabledKanas.value);
 		}
 
-		const kana = selectWeightedElement(tempList);
+		const kana = selectWeightedElement(tempList, stepFunction);
 
 		// console.log(stats.value);
 
@@ -305,5 +310,8 @@ export const useStore = defineStore('store', () => {
 		loadSession,
 		resetDb,
 		saveSections,
+		linearStep,
+		exponentialStep,
+		logStep,
 	};
 });

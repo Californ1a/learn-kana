@@ -10,6 +10,9 @@
 						class="small">
 						{{ randomizer === 'weighted' ? 'Weighted' : 'Unweighted' }}
 					</button>
+					<button v-if="randomizer === 'weighted'" @click="switchWeightStep" id="weight-step-btn" class="small">
+						{{ capitalize(weightStepName) }}
+					</button>
 				</div>
 				<div class="btns right">
 					<button @click="resetSession" class="red small">Reset Session</button>
@@ -79,7 +82,7 @@
 import KanaTable from './components/KanaTable.vue';
 import StatRow from './components/StatRow.vue';
 import LoadingSpinner from './components/LoadingSpinner.vue';
-import { onMounted, ref, computed, watch } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useStore } from './stores/store.js';
 
 const store = useStore();
@@ -92,7 +95,36 @@ const showOptions = ref(true);
 const message = ref('');
 const loading = ref(false);
 const randomizer = ref('weighted');
+const weightStep = ref(0);
 let incorrect = false;
+
+const capitalize = (s) => s ? s[0].toUpperCase() + s.slice(1) : '';
+
+function getStepFunction() {
+	switch (weightStep.value) {
+		case 0:
+			return store.logStep;
+		case 1:
+			return store.exponentialStep;
+		case 2:
+			return store.linearStep;
+		default:
+			return store.logStep;
+	}
+}
+
+const weightStepName = computed(() => {
+	switch (weightStep.value) {
+		case 0:
+			return 'Logarithmic';
+		case 1:
+			return 'Exponential';
+		case 2:
+			return 'Linear';
+		default:
+			return 'Logarithmic';
+	}
+});
 
 const overallAvgTime = computed(() => {
 	if (store.stats.total <= 0 && store.previousSessionStats.total <= 0) return 0;
@@ -184,11 +216,17 @@ async function kanaInput() {
 
 function nextKana(incrementSeen) {
 	if (randomizer.value === 'weighted') {
-		store.selectWeightedKana(incrementSeen);
+		store.selectWeightedKana(incrementSeen, getStepFunction());
 	} else {
 		store.selectRandomKana(incrementSeen);
 	}
 	store.startTime = Date.now();
+	focusInput();
+}
+
+function switchWeightStep() {
+	weightStep.value = (weightStep.value + 1) % 3;
+	nextKana(false);
 	focusInput();
 }
 
@@ -348,5 +386,9 @@ onMounted(async () => {
 
 #loading-spinner {
 	margin-top: 0.4em;
+}
+
+#weight-step-btn {
+	min-width: 83px;
 }
 </style>
