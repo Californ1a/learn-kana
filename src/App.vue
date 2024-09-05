@@ -6,11 +6,11 @@
 				<div class="btns left">
 					<button
 						@click="switchRandomizer"
-						:title="randomizer === 'weighted' ? 'Currently using weighted randomization. Click to use unweighted.' : 'Currently using unweighted randomization. Click to use Weighted.'"
+						:title="`Currently using ${randomizer} randomization. Click to use ${randomizer === 'weighted' ? 'unweighted' : 'weighted'}.`"
 						class="small">
 						{{ randomizer === 'weighted' ? 'Weighted' : 'Unweighted' }}
 					</button>
-					<button v-if="randomizer === 'weighted'" @click="switchWeightStep" id="weight-step-btn" class="small">
+					<button v-if="randomizer === 'weighted'" @click="switchWeightStep" id="weight-step-btn" class="small" title="Type of weighting">
 						{{ weightStepName }}
 					</button>
 					<button @click="nextKana(!isDev)" class="small red" title="This will count as an incorrect answer">Skip</button>
@@ -238,7 +238,7 @@ function switchWeightStep() {
 
 function switchRandomizer() {
 	if (randomizer.value === 'weighted') {
-		randomizer.value = 'random';
+		randomizer.value = 'unweighted';
 	} else {
 		randomizer.value = 'weighted';
 	}
