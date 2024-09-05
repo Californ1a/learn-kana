@@ -9,7 +9,7 @@
 			</span>
 			<span :class="(weight) ? 'script' : ''">
 				<sup v-if="seen" title="Percent Correct" class="percent" :style="{ color: getPercentColor(percent) }"> ({{ percent.toFixed(2) }}%)</sup>
-				<sub v-if="weight" title="Weight (chance to appear)" class="weight">({{ weight.toFixed(2) }})</sub>
+				<sub v-if="weight" title="Weight (chance to appear)" class="weight">({{ weight.toFixed(2) }}%)</sub>
 			</span>
 		</td>
 		<td v-if="seen ||previousSeen" :class="(weight) ? 'min-width' : ''">
@@ -125,6 +125,8 @@ const getPercentColor = computed(() => (val) => {
 
 #stats th {
 	border: 1px solid var(--dark-color);
+	min-width: 45px;
+	width: 50px;
 }
 
 .script {

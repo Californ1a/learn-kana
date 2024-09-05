@@ -34,7 +34,7 @@ export const useStore = defineStore('store', () => {
 	}
 
 	function sortEnabledKanas() {
-		const kanas = enabledKanas.value.filter(kana => kana && kana.kana !== selectedKana.value.kana);
+		const kanas = enabledKanas.value.filter(kana => kana?.kana !== selectedKana.value.kana);
 		const unseenKanas = kanas.filter(kana => !stats.value.kanas[kana.kana]?.seen && !previousSessionStats.value.kanas[kana.kana]?.seen);
 		const seenKanas = kanas.filter(kana => stats.value.kanas[kana.kana]?.seen || previousSessionStats.value.kanas[kana.kana]?.seen);
 
@@ -90,7 +90,7 @@ export const useStore = defineStore('store', () => {
 		return maxWeight / Math.exp(base * i);
 	}
 
-	function generateWeights(arr, stepFunction = logStep, minWeight = 1, maxWeight = 100) {
+	function generateWeights(arr, stepFunction = logStep, minWeight = 1, maxWeight = 1000) {
 		const len = arr.length;
 
 		// Create a weight array
@@ -101,28 +101,27 @@ export const useStore = defineStore('store', () => {
 			weights.push(step);
 
 			// Add the weight to the kana itself
-			if (typeof arr[i] === 'object') {
-				arr[i].weight = weights[i];
-			}
+			// if (typeof arr[i] === 'object') {
+			// 	arr[i].weight = weights[i];
+			// }
+		}
 
-			// Add the weight to the kana stats
+		// Add the weights to the stats
+		const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+		for (let i = 0; i < arr.length; i++) {
+			const weight = (weights[i] / totalWeight) * 100
 			if (!stats.value.kanas[arr[i].kana]) {
-				stats.value.kanas[arr[i].kana] = { weight: weights[i] };
+				stats.value.kanas[arr[i].kana] = { weight };
 			} else {
-				stats.value.kanas[arr[i].kana].weight = weights[i];
+				stats.value.kanas[arr[i].kana].weight = weight;
 			}
 		}
 
-		return weights;
+		return [weights, totalWeight];
 	}
 
 	function selectWeightedElement(arr, stepFunction, minWeight, maxWeight) {
-		const weights = generateWeights(arr, stepFunction, minWeight, maxWeight);
-
-		// console.log('weighted arr', arr);
-
-		// Calculate the total weight sum for normalization
-		const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+		const [weights, totalWeight] = generateWeights(arr, stepFunction, minWeight, maxWeight);
 
 		// Generate a random number and find the corresponding element
 		let random = Math.random() * totalWeight;
@@ -313,5 +312,7 @@ export const useStore = defineStore('store', () => {
 		linearStep,
 		exponentialStep,
 		logStep,
+		generateWeights,
+		sortEnabledKanas,
 	};
 });

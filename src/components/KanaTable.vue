@@ -8,7 +8,7 @@
 				<a @click="uncheckAll">uncheck all</a>
 			</span>
 		</h3>
-		<table>
+		<!-- <table v-if="windowWidth >= 560">
 			<thead>
 				<tr>
 					<th v-for="i in colCount" :key="i">
@@ -32,7 +32,34 @@
 					</td>
 				</tr>
 			</tbody>
-		</table>
+		</table> -->
+		<div class="multi-table">
+			<table v-for="(part, n) in splitKanaList" :key="n">
+				<thead>
+					<tr>
+						<th v-for="i in part.length" :key="i">
+							<input
+								type="checkbox"
+								class="kanacheck"
+								:id="inputId(i)"
+								:checked="getChecked(i)"
+								@input="check(i)"
+								:title="getChecked(i) && store.enabledKanaSections.length === 1 ? 'At least one option must be selected' : ''"
+								:disabled="getChecked(i) && store.enabledKanaSections.length === 1" />
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for="i in rowCount" :key="i">
+						<td v-for="j in part.length" :key="j">
+							<span class="kana">{{ getKanaFromRowCol(i, j) }}</span>
+							<br />
+							<span class="romaji">{{ getKanaFromRowCol(i, j, true) }}</span>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
 	</div>
 </template>
 
@@ -40,6 +67,8 @@
 import kana from '../assets/kana.json';
 import { onMounted, ref, computed } from 'vue';
 import { useStore } from '../stores/store.js';
+
+const windowWidth = ref(window.innerWidth);
 
 const store = useStore();
 
@@ -56,6 +85,14 @@ const kanaTable = ref(kana);
 const kanaList = ref(kanaTable.value[props.type]);
 const colCount = ref(kanaList.value.length);
 const rowCount = ref(kanaList.value[0].length);
+
+const splitKanaList = computed(() => {
+	if (windowWidth.value > 560) return [kanaList.value];
+	const middleIndex = Math.ceil(kanaList.value.length / 2);
+	const firstHalf = kanaList.value.slice(0, middleIndex);
+	const secondHalf = kanaList.value.slice(middleIndex);
+	return [firstHalf, secondHalf];
+})
 
 
 function getKanaFromRowCol(i, j, val = false) {
@@ -102,6 +139,10 @@ onMounted(() => {
 	if (store.enabledKanaSections.length === 0 && props.type === 'hiragana') {
 		store.enabledKanaSections.push(inputId(1));
 	}
+
+	window.addEventListener('resize', () => {
+		windowWidth.value = window.innerWidth;
+	});
 });
 </script>
 
@@ -149,5 +190,11 @@ td {
 
 input:disabled {
 	cursor: not-allowed;
+}
+
+.multi-table {
+	display: flex;
+	flex-direction: column;
+	gap: 1em;
 }
 </style>

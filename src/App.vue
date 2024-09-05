@@ -11,8 +11,9 @@
 						{{ randomizer === 'weighted' ? 'Weighted' : 'Unweighted' }}
 					</button>
 					<button v-if="randomizer === 'weighted'" @click="switchWeightStep" id="weight-step-btn" class="small">
-						{{ capitalize(weightStepName) }}
+						{{ weightStepName }}
 					</button>
+					<button @click="nextKana(!isDev)" class="small red" title="This will count as an incorrect answer">Skip</button>
 				</div>
 				<div class="btns right">
 					<button @click="resetSession" class="red small">Reset Session</button>
@@ -58,7 +59,7 @@
 							:label="store.selectedKana.kana"
 							:correct="store.getCurrentKanaStats()?.correct"
 							:seen="store.getCurrentKanaStats()?.seen"
-							:weight="(randomizer === 'weighted') ? store.getCurrentKanaStats()?.weight : null"
+							:weight="currentKanaWeight"
 							:previousCorrect="store.previousSessionStats.kanas[store.selectedKana.kana]?.correct"
 							:previousSeen="store.previousSessionStats.kanas[store.selectedKana.kana]?.seen"
 							:avgTime="kanaAvgTime" />
@@ -82,8 +83,12 @@
 import KanaTable from './components/KanaTable.vue';
 import StatRow from './components/StatRow.vue';
 import LoadingSpinner from './components/LoadingSpinner.vue';
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watchEffect, watch } from 'vue';
 import { useStore } from './stores/store.js';
+const proc = {
+	env: import.meta.env,
+};
+const isDev = ref(proc.env.MODE === 'development');
 
 const store = useStore();
 
@@ -98,7 +103,9 @@ const randomizer = ref('weighted');
 const weightStep = ref(0);
 let incorrect = false;
 
-const capitalize = (s) => s ? s[0].toUpperCase() + s.slice(1) : '';
+const currentKanaWeight = computed(() => {
+	return (randomizer.value === 'weighted') ? store.stats.kanas[store.selectedKana?.kana]?.weight || 0 : null;
+});
 
 function getStepFunction() {
 	switch (weightStep.value) {
@@ -226,7 +233,6 @@ function nextKana(incrementSeen) {
 
 function switchWeightStep() {
 	weightStep.value = (weightStep.value + 1) % 3;
-	nextKana(false);
 	focusInput();
 }
 
@@ -291,7 +297,7 @@ onMounted(async () => {
 <style scoped>
 #outer {
 	max-width: 50em;
-	min-width: 20em;
+	min-width: 320px;
 	width: 50vw;
 	margin: 2em auto;
 }
@@ -372,6 +378,7 @@ onMounted(async () => {
 	border: none;
 	width: fit-content;
 	font-size: 0.8em;
+	white-space: nowrap;
 }
 
 #stats thead th,
@@ -390,5 +397,53 @@ onMounted(async () => {
 
 #weight-step-btn {
 	min-width: 83px;
+}
+
+@media screen and (max-width: 1070px) {
+	#outer {
+		width: 75vw;
+	}
+}
+
+@media screen and (max-width: 715px) {
+	#outer {
+		width: 95vw;
+	}
+
+	#reset-btn .btns {
+		flex-direction: column;
+	}
+}
+
+@media screen and (max-width: 560px) {
+	#stats {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+
+	#stats table {
+		width: 100%;
+	}
+}
+
+@media screen and (max-width: 360px) {
+	.kana-box {
+		padding: 1em 0;
+	}
+
+	#kana-input {
+		margin: 0 0.5em;
+	}
+
+	#reset-btn {
+		margin: 0 0.5em;
+	}
+
+	#stats table {
+		width: 100%;
+	}
 }
 </style>
