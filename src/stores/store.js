@@ -126,13 +126,13 @@ export const useStore = defineStore('store', () => {
 
 		// Generate a random number and find the corresponding element
 		let random = Math.random() * totalWeight;
-		for (let i = 0; i < len; i++) {
+		for (let i = 0; i < arr.length; i++) {
 			if (random < weights[i]) {
 				return arr[i];
 			}
 			random -= weights[i];
 		}
-		return arr[len - 1]; // Fallback (in case of rounding errors)
+		return arr[arr.length - 1]; // Fallback (in case of rounding errors)
 	}
 
 	function selectWeightedKana(incrementSeen = true, stepFunction) {
