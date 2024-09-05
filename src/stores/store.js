@@ -33,6 +33,126 @@ export const useStore = defineStore('store', () => {
 		return kanaOnly ? list.map(kana => kana.kana) : list;
 	}
 
+	function sortEnabledKanas() {
+		const kanas = enabledKanas.value.filter(kana => kana && kana.kana !== selectedKana.value.kana);
+		const unseenKanas = kanas.filter(kana => !stats.value.kanas[kana.kana]?.seen && !previousSessionStats.value.kanas[kana.kana]?.seen);
+		const seenKanas = kanas.filter(kana => stats.value.kanas[kana.kana]?.seen || previousSessionStats.value.kanas[kana.kana]?.seen);
+
+		// shuffle unseen
+		for (let i = unseenKanas.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[unseenKanas[i], unseenKanas[j]] = [unseenKanas[j], unseenKanas[i]];
+		}
+
+		// Precompute stats for sorting
+		const kanaStats = {};
+		seenKanas.forEach(kana => {
+			const stat = stats.value.kanas[kana.kana] || {};
+			const prevStat = previousSessionStats.value.kanas[kana.kana] || {};
+
+			const seen = (stat.seen || 0) + (prevStat.seen || 0);
+			const correct = (stat.correct || 0) + (prevStat.correct || 0);
+			const percent = seen ? correct / seen : 0;
+
+			const avgTime = seen ? (((stat.averageTime || 0) * (stat.seen || 0))
+				+ ((prevStat.averageTime || 0) * (prevStat.seen || 0))) / seen : 0;
+
+			kanaStats[kana.kana] = { seen, percent, avgTime };
+		});
+
+		// Sort the original seenKanas array using the precomputed stats
+		seenKanas.sort((a, b) => {
+			const statA = kanaStats[a.kana];
+			const statB = kanaStats[b.kana];
+
+			if (statA.seen !== statB.seen) return statA.seen - statB.seen;
+			if (statA.percent !== statB.percent) return statA.percent - statB.percent;
+			return statB.avgTime - statA.avgTime;
+		});
+
+		// console.log('unseen seen', unseenKanas, seenKanas);
+
+		return [...unseenKanas, ...seenKanas];
+	}
+
+	function linearStep(i, maxWeight, minWeight, len) {
+		const step = (maxWeight - minWeight) / (len - 1);
+		return maxWeight - step * i;
+	}
+
+	function exponentialStep(i, maxWeight, minWeight, len) {
+		const base = (maxWeight / minWeight) ** (1 / (len - 1));
+		return maxWeight / base ** i;
+	}
+
+	function logStep(i, maxWeight, minWeight, len) {
+		const base = Math.log(maxWeight / minWeight) / (len - 1);
+		return maxWeight / Math.exp(base * i);
+	}
+
+
+	function selectWeightedElement(arr, minWeight = 1, maxWeight = 100) {
+		const len = arr.length;
+
+		// Create a weight array
+		const weights = [];
+		for (let i = 0; i < len; i++) {
+			// Calculate weight step (difference between weights for adjacent elements)
+			const step = exponentialStep(i, maxWeight, minWeight, len);
+			weights.push(step);
+
+			// Add the weight to the kana itself
+			if (typeof arr[i] === 'object') {
+				arr[i].weight = weights[i];
+			}
+
+			// Add the weight to the kana stats
+			if (!stats.value.kanas[arr[i].kana]) {
+				stats.value.kanas[arr[i].kana] = { weight: weights[i] };
+			} else {
+				stats.value.kanas[arr[i].kana].weight = weights[i];
+			}
+		}
+
+		// console.log('weighted arr', arr);
+
+		// Calculate the total weight sum for normalization
+		const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+
+		// Generate a random number and find the corresponding element
+		let random = Math.random() * totalWeight;
+		for (let i = 0; i < len; i++) {
+			if (random < weights[i]) {
+				return arr[i];
+			}
+			random -= weights[i];
+		}
+		return arr[len - 1]; // Fallback (in case of rounding errors)
+	}
+
+	function selectWeightedKana(incrementSeen = true) {
+		if (enabledKanas.value.length === 0) {
+			getEnabledKanas();
+		}
+		if (enabledKanas.value.length === 0) return { kana: '', romaji: '' };
+
+		// Update stats
+		editStats(incrementSeen);
+
+		const tempList = sortEnabledKanas();
+		if (tempList.length === 0) {
+			// probably only 'n' selected
+			tempList.push(...enabledKanas.value);
+		}
+
+		const kana = selectWeightedElement(tempList);
+
+		// console.log(stats.value);
+
+		selectedKana.value = kana;
+		return kana;
+	}
+
 	function getEnabledKanas() {
 		const sections = enabledKanaSections.value;
 		const list = []
@@ -54,7 +174,7 @@ export const useStore = defineStore('store', () => {
 			if (incrementSeen) {
 				previous.seen++;
 			}
-			previous.averageTime = (previous.averageTime * (previous.seen - 1) + (Date.now() - startTime.value)) / previous.seen;
+			previous.averageTime = ((previous.averageTime * (previous.seen - 1)) + (Date.now() - startTime.value)) / previous.seen;
 			return;
 		}
 		if (!previous) {
@@ -70,116 +190,6 @@ export const useStore = defineStore('store', () => {
 			previous.seen = 0;
 		}
 		previous.averageTime = startTime.value ? Date.now() - startTime.value : 0;
-	}
-
-	function calculateWeight(correctPercentage, seen, averageTime) {
-		// If correctPercentage is NaN or invalid, default to 0 (assumes no correct answers yet)
-		if (isNaN(correctPercentage)) correctPercentage = 0;
-		if (correctPercentage === 1) correctPercentage = 0.99;
-		if (isNaN(seen)) seen = 0;
-		if (isNaN(averageTime)) averageTime = 1000; // Default averageTime
-
-		// return (1 - correctPercentage) + (1 / (seen + 1)) + (averageTime / 1000);
-		// return (1 - correctPercentage) + Math.exp(-seen) + (averageTime / 1000);
-		// return (1 - correctPercentage) + (1 / Math.pow(seen + 1, 2)) + (averageTime / 1000);
-		return (1 - correctPercentage) + (5 / (seen + 1)) + ((averageTime / 1000) / 60);
-		// return (1 - correctPercentage) + (1 / Math.log(seen + 2)) + (averageTime / 1000);
-	}
-
-	function normalizeWeights(weightedKanas) {
-		const minWeight = 1;
-		const maxWeight = 100;
-
-		// Get the minimum and maximum weight values from the calculated weights
-		let minCalculatedWeight = Math.min(...weightedKanas.map(k => k.weight));
-		let maxCalculatedWeight = Math.max(...weightedKanas.map(k => k.weight));
-
-		return weightedKanas.map(kanaObj => {
-			// Scale the weights between minWeight and maxWeight
-			const normalizedWeight = ((kanaObj.weight - minCalculatedWeight) / (maxCalculatedWeight - minCalculatedWeight)) * (maxWeight - minWeight) + minWeight;
-			return {
-				...kanaObj,
-				weight: normalizedWeight
-			};
-		});
-	}
-
-	function selectWeightedKana(incrementSeen = true) {
-		if (enabledKanas.value.length === 0) {
-			getEnabledKanas();
-		}
-		if (enabledKanas.value.length === 0) return { kana: '', romaji: '' };
-
-		// Update stats
-		editStats(incrementSeen);
-
-		const tempList = [...enabledKanas.value.filter(kana => kana && kana.kana !== selectedKana.value.kana)];
-		if (tempList.length === 0) {
-			// probably only 'n' selected
-			tempList.push(...enabledKanas.value);
-		}
-
-		let weightedKanas = [];
-
-		for (const kanaObj of tempList) {
-			const kana = kanaObj.kana;
-			const stat = stats.value.kanas[kana];
-			const previousStat = previousSessionStats.value.kanas[kana];
-
-			// If kana doesn't have stats yet, give it a higher weight
-			let weight;
-			if (!stat && !previousStat) {
-				weight = 100;
-			} else {
-				const seen = (stat?.seen || 0) + (previousStat?.seen || 0);
-				const correct = (stat?.correct || 0) + (previousStat?.correct || 0);
-				const averageTime = (stat?.averageTime || 0);
-				const previousAverageTime = (previousStat?.averageTime || 0);
-				const previousSeen = (previousStat?.seen || 0);
-				const newAverageTime = ((averageTime * seen) + (previousAverageTime * previousSeen)) / (seen + previousSeen);
-				const correctPercentage = seen > 0 ? correct / seen : 0;
-				weight = calculateWeight(correctPercentage, seen, newAverageTime);
-			}
-
-			weightedKanas.push({ kana, weight });
-		}
-
-		// Normalize weights after calculating them
-		weightedKanas = normalizeWeights(weightedKanas);
-
-		// Put weights into stats
-		for (const kanaObj of weightedKanas) {
-			// console.log(weights[i].kana, weights[i].weight);
-			if (!stats.value.kanas[kanaObj.kana]) {
-				stats.value.kanas[kanaObj.kana] = { weight: kanaObj.weight };
-			} else {
-				stats.value.kanas[kanaObj.kana].weight = kanaObj.weight;
-			}
-		}
-
-		// console.log(stats.value);
-		// console.log(previousSessionStats.value);
-
-		// Calculate total weight after normalization
-		let totalWeight = weightedKanas.reduce((sum, obj) => sum + obj.weight, 0);
-
-		// Pick a kana based on normalized weights
-		const randomValue = Math.random() * totalWeight;
-		let cumulativeWeight = 0;
-
-		for (const kanaObj of weightedKanas) {
-			cumulativeWeight += kanaObj.weight;
-			if (randomValue <= cumulativeWeight) {
-				const selected = tempList.find(kana => kana && kana.kana === kanaObj.kana);
-				selectedKana.value = selected;
-				return selected;
-			}
-		}
-
-		// Fallback to random selection if no kana is selected
-		const randomKana = tempList[Math.floor(Math.random() * tempList.length)];
-		selectedKana.value = randomKana;
-		return randomKana;
 	}
 
 	function selectRandomKana(incrementSeen) {
