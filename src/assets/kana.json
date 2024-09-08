@@ -244,7 +244,7 @@
 			null,
 			null,
 			null,
-			{ "kana": "ヲ", "romaji": ["o"] }
+			{ "kana": "ヲ", "romaji": ["o", "wo"] }
 		],
 		[
 			null,
@@ -349,6 +349,64 @@
 			{ "kana": "ピャ", "romaji": ["pya"] },
 			{ "kana": "ピュ", "romaji": ["pyu"] },
 			{ "kana": "ピョ", "romaji": ["pyo"] }
+		]
+	],
+	"additional sounds": [
+		[
+			null,
+			null,
+			null,
+			{ "kana": "シェ", "romaji": ["she"] },
+			null
+		],
+		[
+			null,
+			null,
+			null,
+			{ "kana": "ジェ", "romaji": ["je"] },
+			null
+		],
+		[
+			null,
+			{ "kana": "ティ", "romaji": ["ti"] },
+			{ "kana": "トゥ", "romaji": ["tu"] },
+			null,
+			null
+		],
+		[
+			null,
+			{ "kana": "ディ", "romaji": ["di"] },
+			{ "kana": "ドゥ", "romaji": ["du"] },
+			null,
+			null
+		],
+		[
+			null,
+			null,
+			null,
+			{ "kana": "チェ", "romaji": ["che"] },
+			null
+		],
+		[
+			{ "kana": "ファ", "romaji": ["fa"] },
+			{ "kana": "フィ", "romaji": ["fi"] },
+			null,
+			{ "kana": "フェ", "romaji": ["fe"] },
+			{ "kana": "フォ", "romaji": ["fo"] }
+		],
+		[
+			null,
+			{ "kana": "ウィ", "romaji": ["wi"] },
+			null,
+			{ "kana": "ウェ", "romaji": ["we"] },
+			{ "kana": "ウォ", "romaji": ["wo"] }
+		],
+		[
+			{ "kana": "ヴァ", "romaji": ["va"] },
+			{ "kana": "ヴィ", "romaji": ["vi"] },
+			{ "kana": "ヴ", "romaji": ["vu"] },
+			{ "kana": "ヴェ", "romaji": ["ve"] },
+			{ "kana": "ヴォ", "romaji": ["vo"] }
 		]
 	]
 }

@@ -92,7 +92,7 @@ const isDev = ref(proc.env.MODE === 'development');
 
 const store = useStore();
 
-const tables = ref(['hiragana', 'hiragana combinations', 'katakana', 'katakana combinations']);
+const tables = ref(['hiragana', 'hiragana combinations', 'katakana', 'katakana combinations', 'additional sounds']);
 const kanaInputElem = ref(null);
 const kanaInputText = ref('');
 const showAnswer = ref(false);
