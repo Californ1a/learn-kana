@@ -64,9 +64,9 @@
 </template>
 
 <script setup>
-import kana from '../assets/kana.json';
+import kana from '@/assets/kana.json';
 import { onMounted, ref, computed } from 'vue';
-import { useStore } from '../stores/store.js';
+import { useStore } from '@/stores/store.js';
 
 const windowWidth = ref(window.innerWidth);
 

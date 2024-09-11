@@ -80,11 +80,11 @@
 </template>
 
 <script setup>
-import KanaTable from './components/KanaTable.vue';
-import StatRow from './components/StatRow.vue';
-import LoadingSpinner from './components/LoadingSpinner.vue';
+import KanaTable from '@/components/KanaTable.vue';
+import StatsTable from '@/components/StatsTable.vue';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import { onMounted, ref, computed, watchEffect, watch } from 'vue';
-import { useStore } from './stores/store.js';
+import { useStore } from '@/stores/store.js';
 const proc = {
 	env: import.meta.env,
 };
