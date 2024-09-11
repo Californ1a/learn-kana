@@ -4,13 +4,16 @@
 		<button class="small red" @click="stopTimer">Stop</button>
 	</div>
 	<div v-else class="timer-setup">
-		<h4>Timer</h4>
+		<div :class="{ 'title': justEnded }">
+			<h4>Timer</h4>
+			<button v-if="justEnded" class="small" @click="openInput">Open Input</button>
+		</div>
 		<form @submit.prevent="startTimer">
 			<div class="minutes">
-				<input type="number" v-model="totalMinutes" min="1" max="60" step="1" placeholder="Minutes" required />
+				<input type="number" v-model="totalMinutes" min="1" max="60" step="1" placeholder="Minutes" required title="Total time in minutes for the countdown timer." />
 				<button class="green" type="submit">Start</button>
 			</div>
-			<div class="pause">
+			<div class="pause" title="Will pause the countdown when the window is minimized or the tab is in the background.">
 				<input type="checkbox" id="pauseOnHidden" v-model="pauseOnHidden" />
 				<label for="pauseOnHidden">Pause on hidden</label>
 			</div>
@@ -31,6 +34,7 @@ const interval = ref(null);
 const intervalTime = ref(1000);
 const paused = ref(false);
 const pauseOnHidden = ref(true);
+const justEnded = ref(false);
 
 const emits = defineEmits(['timer-start', 'timer-pause', 'timer-resume', 'timer-stop']);
 
@@ -62,9 +66,16 @@ function updateTimer() {
 
 		clearInterval(interval.value);
 		interval.value = null;
+		justEnded.value = true;
+		emits('timer-stop');
 
 		// TODO: show alert
 	}
+}
+
+function openInput() {
+	justEnded.value = false;
+	emits('timer-start');
 }
 
 function startTimer() {
@@ -80,6 +91,7 @@ function startTimer() {
 	timeRemaining.value = totalMinutes.value * 60 * 1000;
 	elapsed.value = 0;
 	paused.value = false;
+	justEnded.value = false;
 
 	timeStr.value = formatDuration(timeRemaining.value);
 	timerRunning.value = true;
@@ -97,6 +109,7 @@ function stopTimer() {
 		clearInterval(interval.value);
 		interval.value = null;
 	}
+	justEnded.value = true;
 	emits('timer-stop');
 }
 
@@ -139,6 +152,13 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.title {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+}
+
 .timer {
 	display: flex;
 	flex-direction: column;

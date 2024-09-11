@@ -30,7 +30,14 @@
 				</p>
 			</div>
 			<div id="kana-input">
-				<input type="text" id="kana-input-text" ref="kanaInputElem" v-model="kanaInputText" @input="kanaInput" />
+				<input
+					type="text"
+					id="kana-input-text"
+					ref="kanaInputElem"
+					v-model="kanaInputText"
+					@input="kanaInput"
+					:disabled="inputDisabled"
+					:title="inputDisabled ? 'Must start timer or return to Open Input mode first.' : ''" />
 			</div>
 			<div id="message">
 				<p id="message-text">{{ message || '&nbsp;' }}</p>
@@ -40,7 +47,7 @@
 					<StatsTable :randomizer />
 				</div>
 				<div class="timer">
-					<TheTimer @timerStart="focusInput" />
+					<TheTimer @timerStart="timerStart" @timerStop="timerStop" />
 				</div>
 			</div>
 		</div>
@@ -79,7 +86,19 @@ const message = ref('');
 const loading = ref(false);
 const randomizer = ref('weighted');
 const weightStep = ref(0);
+const inputDisabled = ref(false);
 let incorrect = false;
+
+async function timerStart() {
+	nextKana(false);
+	inputDisabled.value = false;
+	await delay(0); // wait for next js engine tick
+	focusInput();
+}
+
+function timerStop() {
+	inputDisabled.value = true;
+}
 
 function getStepFunction() {
 	switch (weightStep.value) {
@@ -276,6 +295,12 @@ onMounted(async () => {
 	font-size: 1.2em;
 	background-color: #444;
 	color: var(--foreground-color);
+}
+
+#kana-input-text:disabled {
+	cursor: not-allowed;
+	background-color: #222;
+	border: 1px dotted var(--danger-color);
 }
 
 #message-text {
