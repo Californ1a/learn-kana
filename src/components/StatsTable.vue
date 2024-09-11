@@ -1,5 +1,5 @@
 <template>
-	<table>
+	<table class="stats-table">
 		<thead v-if="store.stats.total > 0 || store.previousSessionStats.total > 0">
 			<tr>
 				<td></td>
@@ -101,11 +101,5 @@ thead th,
 thead td {
 	border: 1px solid var(--dark-color);
 	text-align: center;
-}
-
-@media screen and (max-width: 560px) {
-	table {
-		width: 100%;
-	}
 }
 </style>

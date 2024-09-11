@@ -316,13 +316,20 @@ onMounted(async () => {
 	min-width: 83px;
 }
 
-@media screen and (max-width: 1070px) {
+#stats {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+}
+
+@media screen and (max-width: 1095px) {
 	#outer {
 		width: 75vw;
 	}
 }
 
-@media screen and (max-width: 715px) {
+@media screen and (max-width: 730px) {
 	#outer {
 		width: 95vw;
 	}
@@ -332,13 +339,14 @@ onMounted(async () => {
 	}
 }
 
-@media screen and (max-width: 560px) {
+@media screen and (max-width: 580px) {
 	#stats {
 		width: 100%;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+		gap: 1.5em;
 	}
 }
 
@@ -355,7 +363,7 @@ onMounted(async () => {
 		margin: 0 0.5em;
 	}
 
-	#stats table {
+	#stats :deep(.stats-table) {
 		width: 100%;
 	}
 }

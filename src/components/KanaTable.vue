@@ -8,33 +8,8 @@
 				<a @click="uncheckAll">uncheck all</a>
 			</span>
 		</h3>
-		<!-- <table v-if="windowWidth >= 560">
-			<thead>
-				<tr>
-					<th v-for="i in colCount" :key="i">
-						<input
-							type="checkbox"
-							class="kanacheck"
-							:id="inputId(i)"
-							:checked="getChecked(i)"
-							@input="check(i)"
-							:title="getChecked(i) && store.enabledKanaSections.length === 1 ? 'At least one option must be selected' : ''"
-							:disabled="getChecked(i) && store.enabledKanaSections.length === 1" />
-					</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr v-for="i in rowCount" :key="i">
-					<td v-for="j in colCount" :key="j">
-						<span class="kana">{{ getKanaFromRowCol(i, j) }}</span>
-						<br />
-						<span class="romaji">{{ getKanaFromRowCol(i, j, true) }}</span>
-					</td>
-				</tr>
-			</tbody>
-		</table> -->
 		<div class="multi-table">
-			<table v-for="(part, n) in splitKanaList" :key="n">
+			<table ref="tableElem" v-for="(part, n) in splitKanaList" :key="n">
 				<thead>
 					<tr>
 						<th v-for="i in part.length" :key="i">
@@ -69,6 +44,9 @@ import { onMounted, ref, computed } from 'vue';
 import { useStore } from '@/stores/store.js';
 
 const windowWidth = ref(window.innerWidth);
+const tableElem = ref(null);
+const tableMinWidth = ref(0);
+const tableIsSplit = ref(false);
 
 const store = useStore();
 
@@ -86,8 +64,30 @@ const kanaList = ref(kanaTable.value[props.type]);
 const colCount = ref(kanaList.value.length);
 const rowCount = ref(kanaList.value[0].length);
 
+function calculateMinWidths() {
+	if (!tableElem.value?.[0]) return;
+	if (tableElem.value[1]) return; // Already split table
+	const tableWidth = tableElem.value[0]?.offsetWidth;
+	if (!tableWidth) return;
+
+	const clone = tableElem.value[0].cloneNode(true);
+	clone.style.width = 'fit-content';
+	clone.style.position = 'absolute'; // Avoid affecting layout
+	clone.style.visibility = 'hidden'; // Make it invisible
+
+	// Append clone to the body to measure its "fit-content" width
+	document.body.appendChild(clone);
+
+	// Set refs
+	tableMinWidth.value = clone.offsetWidth;
+	tableIsSplit.value = tableMinWidth.value >= tableWidth;
+
+	// Remove clone
+	document.body.removeChild(clone);
+}
+
 const splitKanaList = computed(() => {
-	if (windowWidth.value > 560) return [kanaList.value];
+	if (!tableIsSplit.value) return [kanaList.value];
 	const middleIndex = Math.ceil(kanaList.value.length / 2);
 	const firstHalf = kanaList.value.slice(0, middleIndex);
 	const secondHalf = kanaList.value.slice(middleIndex);
@@ -140,8 +140,18 @@ onMounted(() => {
 		store.enabledKanaSections.push(inputId(1));
 	}
 
+	calculateMinWidths();
+
 	window.addEventListener('resize', () => {
 		windowWidth.value = window.innerWidth;
+		const tableWidth = tableElem.value[0]?.offsetWidth;
+		if (!tableWidth) return;
+
+		if (!tableIsSplit.value && tableMinWidth.value >= tableWidth) {
+			tableIsSplit.value = true;
+		} else if (tableIsSplit.value && tableMinWidth.value < tableWidth) {
+			tableIsSplit.value = false;
+		}
 	});
 });
 </script>
@@ -175,6 +185,10 @@ h3 {
 	font-size: 0.8em;
 }
 
+span.kana {
+	white-space: nowrap;
+}
+
 .divider {
 	pointer-events: none;
 }
@@ -186,6 +200,7 @@ td {
 
 .checkall {
 	font-size: 0.8em;
+	white-space: nowrap;
 }
 
 input:disabled {
