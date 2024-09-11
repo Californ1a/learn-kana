@@ -39,6 +39,9 @@
 				<div class="stats-table">
 					<StatsTable :randomizer />
 				</div>
+				<div class="timer">
+					<TheTimer @timerStart="focusInput" />
+				</div>
 			</div>
 		</div>
 		<div id="options">
@@ -57,6 +60,7 @@
 import KanaTable from '@/components/KanaTable.vue';
 import StatsTable from '@/components/StatsTable.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
+import TheTimer from '@/components/TheTimer.vue';
 import { onMounted, ref, computed } from 'vue';
 import { useStore } from '@/stores/store.js';
 const proc = {
